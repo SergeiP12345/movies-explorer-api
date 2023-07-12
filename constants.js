@@ -2,6 +2,8 @@ const regex =
   /(https?:\/\/)?([\da-z\\.-]+)\.([a-z\\.]{2,6})([\\/\w\\.-]*[\w.,@?^=%&:\\/~+#-])*\/?/;
 
 const allowedCors = [
+  "http://popov.lip.nomoreparties.sbs/",
+  "https://popov.lip.nomoreparties.sbs",
   "https://localhost:3000",
   "http://localhost:3000",
   "https://158.160.0.91",
