@@ -1,57 +1,48 @@
-const Movie = require("../models/movie");
-const NotFoundError = require("../utils/errors/not-found-error");
-const ForbiddenError = require("../utils/errors/forbidden-error");
+const { Error } = require('mongoose');
+const movieModel = require('../models/movie');
+const { errorHandler, OK_STATUS, CREATED_STATUS } = require('./errors');
+const NotOwnerError = require('../errors/NotOwnerError');
 
-module.exports.getMovies = (req, res, next) => {
-  Movie.findById(req.user._id)
-    .then((movies) => res.send({ data: movies }))
-    .catch(next);
-};
-
-module.exports.createMovie = (req, res, next) => {
-  const {
-    country,
-    director,
-    duration,
-    year,
-    description,
-    image,
-    trailerLink,
-    thumbnail,
-    movieId,
-    nameRU,
-    nameEN,
-  } = req.body;
-
-  Movie.create({
-    country,
-    director,
-    duration,
-    year,
-    description,
-    image,
-    trailerLink,
-    thumbnail,
+const createMovie = (req, res, next) => {
+  movieModel.create({
     owner: req.user._id,
-    movieId,
-    nameRU,
-    nameEN,
+    ...req.body,
   })
-    .then((movie) => res.status(201).send(movie))
-    .then((movie) => movie.populate("owner"))
-    .catch(next);
+    .then((movie) => {
+      res.status(CREATED_STATUS).send(movie);
+    })
+    .catch((err) => {
+      errorHandler(err, next);
+    });
 };
 
-module.exports.deleteMovie = (req, res, next) => {
-  Movie.findById({ _id: req.params._id })
+const getSavedMovie = (req, res, next) => {
+  movieModel.find({
+    owner: req.user._id,
+  })
+    .then((movies) => res.status(OK_STATUS).send(movies))
+    .catch((err) => errorHandler(err, next));
+};
+
+const deleteMovie = (req, res, next) => {
+  const { _id } = req.params;
+
+  movieModel
+    .findById(_id)
     .orFail(() => {
-      throw new NotFoundError("Фильм не найден");
+      throw new Error.DocumentNotFoundError();
     })
     .then((movie) => {
-      if (movie.owner._id.toString() !== req.user._id) {
-        throw new ForbiddenError("Нет прав доступа");
+      if (movie.owner.toString() !== req.user._id) {
+        throw new NotOwnerError('Вы можете удалить только сохранённый фильм');
       }
-      return Movie.deleteOne(movie).then(() => res.send(movie));
+      movieModel.findByIdAndRemove(_id)
+        .then((removedMovie) => {
+          res.status(OK_STATUS).send(removedMovie);
+        })
+        .catch((err) => errorHandler(err, next));
     })
-    .catch(next);
+    .catch((err) => errorHandler(err, next));
 };
+
+module.exports = { createMovie, getSavedMovie, deleteMovie };

@@ -1,88 +1,64 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const User = require("../models/user");
-const { NODE_ENV, JWT_SECRET } = require("../config");
-const NotFoundError = require("../utils/errors/not-found-error");
-const ConflictError = require("../utils/errors/conflict-error");
-const BadRequestError = require("../utils/errors/bad-request-error");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const userModel = require('../models/user');
+const { errorHandler, OK_STATUS, CREATED_STATUS } = require('./errors');
+const { SALT_ROUNDS, jwtSecretCheck } = require('../config');
 
-module.exports.createUser = (req, res, next) => {
-  const { email, password, name } = req.body;
-
-  bcrypt
-    .hash(password, 10)
-    .then((hash) => User.create({ email, password: hash, name }))
-    .then((user) => res.status(201).send({ data: user }))
-    .catch((err) => {
-      if (err.code === 11000) {
-        next(new ConflictError("Указанный email уже существует"));
-      } else if (err.name === "ValidationError") {
-        next(new BadRequestError("Произошла ошибка валидации"));
-      } else {
-        next(err);
-      }
-    });
-};
-
-module.exports.login = (req, res, next) => {
+// проверяет переданные в теле почту и пароль
+// и возвращает JWT
+const login = (req, res, next) => {
   const { email, password } = req.body;
-
-  return User.findUserByCredentials(email, password)
+  return userModel.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign(
         { _id: user._id },
-        NODE_ENV === "production" ? JWT_SECRET : "jwt-secret",
-        {
-          expiresIn: "7d",
-        }
+        jwtSecretCheck(),
+        { expiresIn: '7d' },
       );
-
-      res.cookie("jwt", token, {
-        maxAge: 3600000 * 24 * 7,
-        httpOnly: true,
-        sameSite: true,
-      });
-      res.send({ _id: user._id });
+      res.send({ token });
     })
-    .catch(next);
+    .catch((err) => {
+      errorHandler(err, next);
+    });
 };
 
-module.exports.getCurrentUser = (req, res, next) => {
-  User.findById(req.user._id)
-    .then((user) => {
-      if (user) {
-        res.status(200).send(user);
-      } else {
-        throw new NotFoundError("Нет пользователя с таким id");
-      }
-    })
-    .catch(next);
+// создаёт пользователя с переданными в теле
+// email, password и name
+const createUser = (req, res, next) => {
+  bcrypt.hash(req.body.password, SALT_ROUNDS)
+    .then((hash) => userModel.create({
+      ...req.body,
+      name: req.body.name,
+      email: req.body.email,
+      password: hash,
+    }))
+    .then((user) => res.status(CREATED_STATUS).send({
+      name: user.name,
+      email: user.email,
+    }))
+    .catch((err) => errorHandler(err, next));
 };
 
-module.exports.updateProfile = (req, res, next) => {
-  const userId = req.user._id;
-  User.findByIdAndUpdate(
-    { _id: userId },
-    { email: req.body.email, name: req.body.name },
-    {
-      new: true,
-      runValidators: true,
-    }
-  )
-    .then((user) => {
-      if (user) {
-        res.send(user);
-      } else {
-        throw new NotFoundError("Нет пользователя с таким id");
-      }
-    })
-    .catch(next);
+// обновляет информацию о пользователе (email и имя)
+const updateUser = (req, res, next) => {
+  userModel.findByIdAndUpdate(req.user._id, {
+    name: req.body.name,
+    email: req.body.email,
+  }, {
+    new: true, // обработчик then получит на вход обновлённую запись
+    runValidators: false, // данные не будут валидированы перед изменением
+  })
+    .then((user) => res.status(OK_STATUS).send(user))
+    .catch((err) => errorHandler(err, next));
 };
 
-module.exports.logout = (req, res) => {
-  res.clearCookie("jwt", {
-    httpOnly: true,
-    sameSite: true,
-  });
-  res.send({ message: "Успешный выход" });
+// возвращает информацию о пользователе (email и имя)
+const getUser = (req, res, next) => {
+  userModel.findById(req.user._id)
+    .then((user) => res.status(OK_STATUS).send(user))
+    .catch((err) => errorHandler(err, next));
+};
+
+module.exports = {
+  login, createUser, updateUser, getUser,
 };

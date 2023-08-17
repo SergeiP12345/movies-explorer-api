@@ -1,23 +1,24 @@
-const router = require("express").Router();
-const users = require("./users");
-const movies = require("./movies");
-const auth = require("../middlewares/auth");
-const { createUser, login, logout } = require("../controllers/users");
-const {
-  registerValidation,
-  loginValidation,
-} = require("../middlewares/validation");
-const NotFoundError = require("../utils/errors/not-found-error");
+const router = require('express').Router();
+const userRouter = require('./users');
+const movieRouter = require('./movies');
+const auth = require('../middlewares/auth');
+const { login, createUser } = require('../controllers/users');
+const { validateUserLogin, validateUserRegistration } = require('../middlewares/validate');
+const DocumentNotFoundError = require('../errors/CastError');
 
-router.post("/signup", registerValidation, createUser);
-router.post("/signin", loginValidation, login);
-
-router.use("/users", auth, users);
-router.use("/movies", auth, movies);
-router.post("/signout", auth, logout);
-
-router.use("*", (req, res, next) => {
-  next(new NotFoundError("Страница не найдена"));
+// TODO убрать после ревью
+router.get('/crash-test', () => {
+  setTimeout(() => {
+    throw new Error('Сервер сейчас упадёт');
+  }, 0);
 });
+
+router.post('/signin', validateUserLogin, login);
+
+router.post('/signup', validateUserRegistration, createUser);
+router.use(auth);
+router.use('/users', userRouter);
+router.use('/movies', movieRouter);
+router.use(() => { throw new DocumentNotFoundError('страница не найдена'); });
 
 module.exports = router;

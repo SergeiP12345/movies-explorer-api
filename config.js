@@ -1,6 +1,26 @@
+require('dotenv').config();
+
+const { PORT = 3000 } = process.env;
+const { NODE_ENV, JWT_SECRET, DB_ADDRESS } = process.env;
+const SALT_ROUNDS = 10;
+const jwtSecretCheck = () => {
+  const sw = 'sw123456789';
+
+  if (!NODE_ENV) {
+    return sw;
+  }
+  return NODE_ENV === 'production' ? JWT_SECRET : sw;
+};
+
+const dbCheck = () => {
+  const db = 'mongodb://127.0.0.1:27017/bitfilmsdb';
+
+  if (!NODE_ENV) {
+    return db;
+  }
+  return NODE_ENV === 'production' ? DB_ADDRESS : db;
+};
+
 module.exports = {
-  PORT: process.env.PORT || 3000,
-  MONGODB_URI: process.env.MONGODB_URI || "mongodb://127.0.0.0:27017/bitfilmsdb",
-  JWT_SECRET: process.env.JWT_SECRET || "jwt-secret",
-  NODE_ENV: process.env.NODE_ENV,
+  PORT, dbCheck, SALT_ROUNDS, jwtSecretCheck,
 };
