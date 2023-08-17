@@ -6,8 +6,8 @@ const allowedCors = [
   "https://popov.lip.nomoreparties.sbs",
   "https://localhost:3000",
   "http://localhost:3000",
-  "https://158.160.0.91",
-  "http://158.160.0.91",
+  "https://158.160.12.203",
+  "http://158.160.12.203",
 ];
 
 const STATUS_BAD_REQUEST = 400;
