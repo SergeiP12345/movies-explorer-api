@@ -4,10 +4,11 @@ const { errorHandler, OK_STATUS, CREATED_STATUS } = require('./errors');
 const NotOwnerError = require('../errors/NotOwnerError');
 
 const createMovie = (req, res, next) => {
-  movieModel.create({
-    owner: req.user._id,
-    ...req.body,
-  })
+  movieModel
+    .create({
+      owner: req.user._id,
+      ...req.body,
+    })
     .then((movie) => {
       res.status(CREATED_STATUS).send(movie);
     })
@@ -17,9 +18,10 @@ const createMovie = (req, res, next) => {
 };
 
 const getSavedMovie = (req, res, next) => {
-  movieModel.find({
-    owner: req.user._id,
-  })
+  movieModel
+    .find({
+      owner: req.user._id,
+    })
     .then((movies) => res.status(OK_STATUS).send(movies))
     .catch((err) => errorHandler(err, next));
 };
@@ -36,7 +38,8 @@ const deleteMovie = (req, res, next) => {
       if (movie.owner.toString() !== req.user._id) {
         throw new NotOwnerError('Вы можете удалить только сохранённый фильм');
       }
-      movieModel.findByIdAndRemove(_id)
+      movieModel
+        .findByIdAndRemove(_id)
         .then((removedMovie) => {
           res.status(OK_STATUS).send(removedMovie);
         })
