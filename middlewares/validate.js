@@ -1,6 +1,6 @@
 const { celebrate, Joi } = require('celebrate');
 const {
-  httpRegExp, emailRegExp, engRegExp, rusRegExp,
+  httpRegExp, emailRegExp,
 } = require('../validation/validate');
 
 const validateUserLogin = celebrate({
@@ -55,8 +55,8 @@ const validateCreateMovie = celebrate({
     trailerLink: Joi.string().uri().required().regex(httpRegExp),
     thumbnail: Joi.string().uri().required().regex(httpRegExp),
     movieId: Joi.number().required(),
-    nameRU: Joi.string().required().regex(rusRegExp), // russian words
-    nameEN: Joi.string().required().regex(engRegExp), // english words
+    nameRU: Joi.string().required(), // russian words
+    nameEN: Joi.string().required(), // english words
   }),
 });
 
