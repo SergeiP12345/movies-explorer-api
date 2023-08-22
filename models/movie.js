@@ -66,15 +66,6 @@ const movieSchema = new Schema({
     required: true,
   },
 
-  nameRU: {
-    type: String,
-    required: true,
-  },
-
-  nameEN: {
-    type: String,
-    required: true,
-  },
 });
 
 module.exports = model('movie', movieSchema);
