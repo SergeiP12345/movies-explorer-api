@@ -65,6 +65,15 @@ const movieSchema = new Schema({
     type: Number,
     required: true,
   },
+  nameRU: {
+    type: String,
+    required: true,
+  },
+  // nameEN — название фильма на английском языке. Обязательное поле-строка.
+  nameEN: {
+    type: String,
+    required: true,
+  },
 
 });
 
